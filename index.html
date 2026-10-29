@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Diwali Tambola - Player & Spectator View</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <div class="top-control-bar">
+    <div class="control-title">🪔 Tambola Control Bar</div>
+    <div class="switch-tabs">
+      <a href="admin.html" class="tab-btn">🎛️ Host Page</a>
+      <a href="index.html" class="tab-btn active">📱 Player Link View</a>
+    </div>
+  </div>
+
+  <!-- Updated Welcome Modal with Cross (✕) Button, Guest Mode & Back Option -->
+  <div id="playerNameModal" class="modal-overlay">
+    <div class="modal-box" style="text-align: center;">
+      <!-- Cross (✕) Button to Cancel & Watch as Guest -->
+      <button class="modal-close" onclick="enterAsGuestSpectator()" title="Close & Watch as Guest">✕</button>
+
+      <div style="font-size: 3rem; margin-bottom: 8px;">🪔✨</div>
+      <h2 style="color: var(--gold); margin-bottom: 6px;">Welcome to Diwali Tambola!</h2>
+      <p style="color: var(--text-muted); font-size: 0.92rem; margin-bottom: 16px;">
+        Koi login ya password nahi chahiye! Apna naam daal kar 15-number Ticket lo, ya fir bina khele <b>Guest</b> bankar live game dekho.
+      </p>
+
+      <input type="text" id="playerNameInput" class="input-field" placeholder="Apna Naam Likho (e.g. Rahul, Imaz)" maxlength="22" />
+
+      <button class="btn btn-gold" style="width: 100%; margin-bottom: 10px;" onclick="joinGameWithName()">
+        🎟️ Get Ticket & Enter Game
+      </button>
+
+      <button class="btn btn-dark" style="width: 100%; margin-bottom: 10px;" onclick="enterAsGuestSpectator()">
+        👀 Sirf Game Dekho (Watch as Guest / Spectator)
+      </button>
+
+      <a href="admin.html" class="btn btn-outline-purple">
+        ⬅️ Back to Host / Admin Page
+      </a>
+    </div>
+  </div>
+
+  <!-- Main Player / Guest Content -->
+  <div class="container">
+
+    <!-- Header -->
+    <div class="header-bar">
+      <div class="brand-box">
+        <div class="diya-logo">🪔</div>
+        <div>
+          <div class="brand-title">Demolink27.10</div>
+          <div class="brand-sub" id="playerRoundSub">LIVE • ROUND 1</div>
+        </div>
+      </div>
+      <div class="live-badge" id="playerLiveBadge">live</div>
+    </div>
+
+    <!-- Top Utility Bar -->
+    <div class="pill-bar">
+      <button class="pill-btn" id="playerSoundBtn" onclick="togglePlayerSound()">🔇 Sound off</button>
+      <button class="pill-btn" style="border-color: var(--gold); color: var(--gold-bright);" onclick="promptChangeName()">
+        👤 <span id="currentPlayerBadge">Guest Spectator</span> (Change / Join)
+      </button>
+    </div>
+
+    <!-- Live Emoji Reactions Bar -->
+    <div class="reaction-bar">
+      <span style="font-size: 0.82rem; color: var(--text-muted); font-weight: 600;">Send Live Vibe:</span>
+      <button class="reaction-btn" onclick="triggerReaction('🪔')" title="Diya">🪔</button>
+      <button class="reaction-btn" onclick="triggerReaction('🎆')" title="Cracker">🎆</button>
+      <button class="reaction-btn" onclick="triggerReaction('👏')" title="Clap">👏</button>
+      <button class="reaction-btn" onclick="triggerReaction('🔥')" title="Fire">🔥</button>
+      <button class="reaction-btn" onclick="triggerReaction('😂')" title="Laugh">😂</button>
+    </div>
+
+    <!-- Last Called Number Card with Fun Desi Lingo -->
+    <div class="card">
+      <div class="last-called-flex">
+        <div class="big-number" id="playerLastCalled">--</div>
+        <div>
+          <div class="called-meta-label">LAST CALLED</div>
+          <div class="called-meta-status" id="playerLatestActivity">Waiting for host...</div>
+          <div class="lingo-pill" id="playerLingoText">Diwali Tambola Ready! 🪔</div>
+        </div>
+      </div>
+      <div class="recent-balls" id="playerRecentBalls"></div>
+    </div>
+
+    <!-- GUEST / SPECTATOR MODE VIEW (Shown when user cancels popup or chooses Guest Mode) -->
+    <div id="guestSpectatorSection" style="display: none;">
+      <div class="spectator-banner">
+        <div style="font-size: 2.2rem; margin-bottom: 6px;">👀🍿</div>
+        <h3 style="color: var(--gold); margin-bottom: 6px;">You are watching as a Guest!</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 14px;">
+          Aap abhi Spectator Mode mein live game dekh rahe hain. Agar aapko bhi ticket lekar khelna hai, toh niche button dabayein!
+        </p>
+        <button class="btn btn-gold" onclick="promptChangeName()">🎟️ Mujhe Bhi Khelna Hai (Get Ticket)</button>
+      </div>
+
+      <!-- Live 1-90 Board for Guests so they can enjoy watching -->
+      <div class="card">
+        <div class="card-title">
+          <span>Live 1-90 Number Board</span>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Spectator View</span>
+        </div>
+        <div class="board-grid" id="guestBoardGrid"></div>
+      </div>
+    </div>
+
+    <!-- ACTIVE PLAYER TICKET SECTION (Shown only when user enters a name) -->
+    <div id="activePlayerSection" style="display: none;">
+      <div class="ticket-header-bar">
+        <div class="ticket-player-name" id="ticketOwnerName">Player</div>
+        <div class="player-progress" id="ticketMarkedCounter">0/15 marked</div>
+      </div>
+
+      <!-- Creative Beginner Helper: Alerts player if a called number is still uncut on their ticket -->
+      <div id="missedNumberAlert" class="missed-alert-banner"></div>
+
+      <div class="ticket-outer">
+        <div class="ticket-grid" id="playerTicketGrid"></div>
+      </div>
+
+      <p class="helper-note" style="margin-bottom: 18px;">
+        Listen to the host. Tap a number on your ticket to cut it. Claim before anyone else. Wrong cuts turn into bogeys.
+      </p>
+    </div>
+
+    <!-- Claim Prizes Section -->
+    <div class="card">
+      <div class="activity-label" style="color: var(--gold); margin-bottom: 14px;">
+        ✦ PRIZES & CLAIMS ✦
+      </div>
+      <div class="claim-grid" id="playerClaimGrid"></div>
+    </div>
+
+    <!-- Live Leaderboard for Players & Guests -->
+    <div class="card">
+      <div class="card-title">
+        <span>👑 Who is Winning? (Live Race)</span>
+        <span style="font-size: 0.8rem; color: var(--text-muted);" id="racePlayersCount">0 Players</span>
+      </div>
+      <div id="playerLeaderboardList"></div>
+    </div>
+
+    <!-- Live Activity Feed -->
+    <div class="card">
+      <div class="activity-label">LIVE GAME ACTIVITY</div>
+      <div class="activity-list" id="playerActivityList"></div>
+    </div>
+
+    <div class="footer-diwali">🪔 Happy Diwali</div>
+  </div>
+
+  <script src="js/game.js"></script>
+  <script>
+    let currentPlayerName = sessionStorage.getItem('TAMBOLA_PLAYER_NAME') || '';
+    let isGuestMode = sessionStorage.getItem('TAMBOLA_GUEST_MODE') === 'true';
+    let playerSound = false;
+    let lastSpokenNumber = null;
+    let lastReactionIdSeen = null;
+
+    function initPlayerPage() {
+      if (!currentPlayerName && !isGuestMode) {
+        document.getElementById('playerNameModal').classList.add('show');
+      } else if (currentPlayerName) {
+        ensurePlayerRegistered(currentPlayerName);
+      }
+      renderPlayerUI();
+    }
+
+    // Join as an Active Player with a Ticket
+    function joinGameWithName() {
+      const input = document.getElementById('playerNameInput').value.trim();
+      if (!input) {
+        alert('Ticket lene ke liye apna naam likho, ya fir "Sirf Game Dekho (Guest)" button dabao!');
+        return;
+      }
+      currentPlayerName = input;
+      isGuestMode = false;
+      sessionStorage.setItem('TAMBOLA_PLAYER_NAME', currentPlayerName);
+      sessionStorage.setItem('TAMBOLA_GUEST_MODE', 'false');
+      document.getElementById('playerNameModal').classList.remove('show');
+      ensurePlayerRegistered(currentPlayerName);
+      renderPlayerUI();
+    }
+
+    // Cancel Popup (✕) or Click Watch as Guest
+    function enterAsGuestSpectator() {
+      currentPlayerName = '';
+      isGuestMode = true;
+      sessionStorage.removeItem('TAMBOLA_PLAYER_NAME');
+      sessionStorage.setItem('TAMBOLA_GUEST_MODE', 'true');
+      document.getElementById('playerNameModal').classList.remove('show');
+      renderPlayerUI();
+    }
+
+    function promptChangeName() {
+      document.getElementById('playerNameInput').value = currentPlayerName;
+      document.getElementById('playerNameModal').classList.add('show');
+    }
+
+    function ensurePlayerRegistered(name) {
+      const state = getGameState();
+      if (!state.players[name]) {
+        state.players[name] = {
+          name: name,
+          ticket: generateTambolaTicket(),
+          marked: [],
+          bogeys: 0,
+          joinedAt: getTimeStr()
+        };
+        addActivity(state, `${name} joined the game & locked ticket.`);
+        saveGameState(state);
+      }
+    }
+
+    function togglePlayerSound() {
+      playerSound = !playerSound;
+      document.getElementById('playerSoundBtn').textContent = playerSound ? '🔊 Sound on' : '🔇 Sound off';
+    }
+
+    function triggerReaction(emoji) {
+      const sender = currentPlayerName || 'Guest 👀';
+      sendLiveReaction(emoji, sender);
+    }
+
+    function onTicketNumberClick(num, cellEl) {
+      if (!currentPlayerName) return;
+      const state = getGameState();
+      if (state.status !== 'active') {
+        alert('Ye round khatam ho chuka hai! Host ke naye round ka wait karein.');
+        return;
+      }
+
+      const player = state.players[currentPlayerName];
+      if (!player) return;
+
+      const calledSet = new Set(state.calledNumbers);
+
+      if (!calledSet.has(num)) {
+        player.bogeys = (player.bogeys || 0) + 1;
+        addActivity(state, `⚠️ Bogey! ${currentPlayerName} tried cutting uncalled number ${num}.`);
+        saveGameState(state);
+
+        cellEl.classList.add('bogey-flash');
+        setTimeout(() => cellEl.classList.remove('bogey-flash'), 650);
+        alert(`❌ BOGEY! Number ${num} abhi tak Host ne call nahi kiya hai!`);
+        renderPlayerUI();
+        return;
+      }
+
+      const idx = player.marked.indexOf(num);
+      if (idx === -1) {
+        player.marked.push(num);
+        const validCount = player.marked.filter(n => calledSet.has(n)).length;
+        if (validCount === 14) {
+          addActivity(state, `🔥 ALERT: ${currentPlayerName} is just 1 number away from FULL HOUSE (14/15)!`);
+        }
+      } else {
+        player.marked.splice(idx, 1);
+      }
+
+      saveGameState(state);
+      renderPlayerUI();
+    }
+
+    function claimPrize(prizeKey) {
+      if (isGuestMode || !currentPlayerName) {
+        alert('👀 Aap abhi Guest Spectator Mode mein hain! Prize claim karne ke liye upar "Get Ticket" daba kar game join karein.');
+        return;
+      }
+
+      const state = getGameState();
+      if (state.status !== 'active') {
+        alert('Round khatam ho chuka hai!');
+        return;
+      }
+
+      const prize = state.prizes[prizeKey];
+      if (!prize || prize.status === 'claimed') {
+        alert(`Ye prize pehle hi ${prize.winner} claim kar chuka hai!`);
+        return;
+      }
+
+      const player = state.players[currentPlayerName];
+      if (!player) return;
+
+      const isValid = verifyPrizeClaim(player.ticket, player.marked, state.calledNumbers, prizeKey);
+      if (isValid) {
+        prize.status = 'claimed';
+        prize.winner = currentPlayerName;
+        addActivity(state, `🏆 ${currentPlayerName} completed & claimed ${prize.name}!`);
+        archiveRoundIfNeeded(state, 'In Progress');
+
+        if (areAllPrizesClaimed(state)) {
+          state.status = 'completed';
+          addActivity(state, `🎉 All prizes claimed in Round ${state.round}!`);
+          archiveRoundIfNeeded(state, 'All Prizes Claimed');
+        }
+
+        saveGameState(state);
+        launchCelebrationConfetti();
+        renderPlayerUI();
+        alert(`🎉 Badhai Ho ${currentPlayerName}! Aapne "${prize.name}" jeet liya hai!`);
+      } else {
+        player.bogeys = (player.bogeys || 0) + 1;
+        addActivity(state, `❌ False claim by ${currentPlayerName} for ${prize.name}.`);
+        saveGameState(state);
+        renderPlayerUI();
+        alert(`❌ False Claim (Bogey)! Aapke "${prize.name}" ke saare numbers abhi call/mark nahi hue hain.`);
+      }
+    }
+
+    function renderPlayerUI() {
+      const state = getGameState();
+      const calledSet = new Set(state.calledNumbers);
+
+      document.getElementById('playerRoundSub').textContent = `LIVE • ROUND ${state.round}`;
+      document.getElementById('playerLiveBadge').textContent = state.status === 'active' ? 'live' : 'ended';
+      document.getElementById('playerLastCalled').textContent = state.lastCalled !== null ? state.lastCalled : '--';
+      document.getElementById('playerLingoText').textContent = getNumberLingo(state.lastCalled);
+
+      if (state.lastCalled && state.lastCalled !== lastSpokenNumber) {
+        lastSpokenNumber = state.lastCalled;
+        speakText(`Number ${state.lastCalled}. ${getNumberLingo(state.lastCalled)}`, playerSound);
+      }
+
+      if (state.lastReaction && state.lastReaction.id !== lastReactionIdSeen) {
+        lastReactionIdSeen = state.lastReaction.id;
+        spawnFloatingEmoji(state.lastReaction.emoji, state.lastReaction.sender);
+      }
+
+      document.getElementById('playerLatestActivity').textContent =
+        state.activity.length > 0 ? state.activity[0].text : 'Game is live!';
+
+      // Recent called chips
+      const recent = [...state.calledNumbers].reverse().slice(0, 6);
+      document.getElementById('playerRecentBalls').innerHTML = recent.map((n, i) =>
+        `<div class="ball-chip ${i === 0 ? 'latest' : ''}">${n}</div>`
+      ).join('');
+
+      // Switch between Guest View and Active Player View
+      if (isGuestMode || !currentPlayerName || !state.players[currentPlayerName]) {
+        document.getElementById('currentPlayerBadge').textContent = 'Guest Spectator 👀';
+        document.getElementById('guestSpectatorSection').style.display = 'block';
+        document.getElementById('activePlayerSection').style.display = 'none';
+
+        // Render 1-90 Board for Guests
+        let guestBoardHtml = '';
+        for (let i = 1; i <= 90; i++) {
+          let cls = 'board-cell';
+          if (state.lastCalled === i) cls += ' current';
+          else if (calledSet.has(i)) cls += ' called';
+          guestBoardHtml += `<div class="${cls}">${i}</div>`;
+        }
+        document.getElementById('guestBoardGrid').innerHTML = guestBoardHtml;
+      } else {
+        document.getElementById('guestSpectatorSection').style.display = 'none';
+        document.getElementById('activePlayerSection').style.display = 'block';
+
+        const player = state.players[currentPlayerName];
+        const markedSet = new Set(player.marked);
+        const validMarkedCount = player.marked.filter(n => calledSet.has(n)).length;
+
+        document.getElementById('currentPlayerBadge').textContent = currentPlayerName;
+        document.getElementById('ticketOwnerName').textContent = currentPlayerName;
+        document.getElementById('ticketMarkedCounter').textContent = `${validMarkedCount}/15 marked`;
+
+        // Check how many called numbers are on the player's ticket but NOT marked yet
+        let missedCount = 0;
+        let ticketHtml = '';
+        for (let r = 0; r < 3; r++) {
+          for (let c = 0; c < 9; c++) {
+            const val = player.ticket[r][c];
+            if (val === 0) {
+              ticketHtml += `<div class="ticket-cell empty"></div>`;
+            } else {
+              const isMarked = markedSet.has(val) && calledSet.has(val);
+              if (calledSet.has(val) && !markedSet.has(val)) {
+                missedCount++;
+              }
+              ticketHtml += `
+                <div class="ticket-cell num ${isMarked ? 'marked' : ''}" onclick="onTicketNumberClick(${val}, this)">
+                  ${val}
+                </div>
+              `;
+            }
+          }
+        }
+        document.getElementById('playerTicketGrid').innerHTML = ticketHtml;
+
+        const alertBox = document.getElementById('missedNumberAlert');
+        if (missedCount > 0) {
+          alertBox.style.display = 'block';
+          alertBox.textContent = `🔔 Dhyan de! ${missedCount} called number aapke ticket par hai jo aapne abhi tak cut nahi kiya!`;
+        } else {
+          alertBox.style.display = 'none';
+        }
+      }
+
+      // Render Claim Cards
+      document.getElementById('playerClaimGrid').innerHTML = Object.values(state.prizes).map(p => {
+        const isFullHouse = p.key === 'fullHouse';
+        const isClaimed = p.status === 'claimed';
+        const subActionText = isGuestMode ? 'Spectator View Only' : 'Tap to Claim';
+        return `
+          <div class="claim-card ${isFullHouse ? 'full-width' : ''} ${isClaimed ? 'claimed' : ''}"
+               onclick="${isClaimed ? '' : `claimPrize('${p.key}')`}">
+            <div class="claim-icon">${p.icon}</div>
+            <div class="claim-name">${p.name}</div>
+            <div class="claim-sub">${p.sub}</div>
+            ${isClaimed
+              ? `<div class="claim-winner-badge">🏆 Won by ${p.winner}</div>`
+              : `<div style="margin-top:8px; font-size:0.75rem; color:#ffd15c;">${subActionText}</div>`
+            }
+          </div>
+        `;
+      }).join('');
+
+      // Render Live Leaderboard (Who is Winning)
+      const playersArr = Object.values(state.players);
+      document.getElementById('racePlayersCount').textContent = `${playersArr.length} Players`;
+      if (playersArr.length === 0) {
+        document.getElementById('playerLeaderboardList').innerHTML = `
+          <p style="color: var(--text-muted); font-size: 0.9rem;">No active players yet.</p>
+        `;
+      } else {
+        let maxMarked = 0;
+        playersArr.forEach(p => {
+          const c = p.marked.filter(n => calledSet.has(n)).length;
+          if (c > maxMarked) maxMarked = c;
+        });
+
+        const sorted = [...playersArr].sort((a, b) => {
+          return b.marked.filter(n => calledSet.has(n)).length - a.marked.filter(n => calledSet.has(n)).length;
+        });
+
+        document.getElementById('playerLeaderboardList').innerHTML = sorted.map(p => {
+          const c = p.marked.filter(n => calledSet.has(n)).length;
+          const isLeader = maxMarked > 0 && c === maxMarked;
+          return `
+            <div class="player-row ${isLeader ? 'leader' : ''}">
+              <div class="player-info">
+                <span class="green-dot"></span>
+                <strong>${p.name}</strong>
+                ${isLeader ? `<span class="leader-badge">👑 Leading</span>` : ''}
+                ${c === 14 ? `<span class="bogey-tag" style="background:#ff7300; color:#fff;">🔥 1 Left!</span>` : ''}
+              </div>
+              <div class="player-progress">${c}/15 marked</div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Render Activity List
+      document.getElementById('playerActivityList').innerHTML = state.activity.slice(0, 15).map(item => `
+        <div class="activity-item">
+          <span>${item.text}</span>
+          <span class="activity-time">${item.time}</span>
+        </div>
+      `).join('');
+    }
+
+    window.addEventListener('storage', () => renderPlayerUI());
+    if (syncChannel) {
+      syncChannel.onmessage = (e) => {
+        if (e.data && e.data.type === 'LIVE_REACTION') {
+          lastReactionIdSeen = e.data.data.id;
+          spawnFloatingEmoji(e.data.data.emoji, e.data.data.sender);
+        }
+        renderPlayerUI();
+      };
+    }
+    setInterval(renderPlayerUI, 1200);
+
+    initPlayerPage();
+  </script>
+</body>
+</html>

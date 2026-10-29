@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Diwali Tambola - Host / Admin Control</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <div class="top-control-bar">
+    <div class="control-title">🪔 Tambola Control Bar</div>
+    <div class="switch-tabs">
+      <a href="admin.html" class="tab-btn active">🎛️ Host Page</a>
+      <a href="index.html" target="_blank" class="tab-btn">📱 Player Link View ↗</a>
+    </div>
+  </div>
+
+  <!-- Admin Hardcoded Login Modal -->
+  <div id="adminLoginModal" class="modal-overlay show">
+    <div class="modal-box">
+      <h2 style="color: var(--gold); margin-bottom: 8px;">🔐 Host / Admin Login</h2>
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 16px;">
+        Players ko Admin Page se rokne ke liye Admin ID aur Password daalein.<br/>
+        <span style="color: #ffd15c;">(Default ID: <b>admin</b> | Pass: <b>diwali123</b>)</span>
+      </p>
+      <input type="text" id="adminIdInput" class="input-field" placeholder="Admin ID (admin)" value="admin" />
+      <input type="password" id="adminPassInput" class="input-field" placeholder="Password (diwali123)" value="diwali123" />
+      <p id="loginError" style="color: var(--danger); font-size: 0.85rem; margin-bottom: 10px; display: none;">
+        ❌ Galat ID ya Password! Kripya 'admin' aur 'diwali123' daalein.
+      </p>
+      <button class="btn btn-gold" style="width: 100%;" onclick="handleAdminLogin()">Unlock Admin Dashboard</button>
+    </div>
+  </div>
+
+  <!-- Main Admin Content -->
+  <div class="container" id="adminMainContent" style="display: none;">
+
+    <!-- Header -->
+    <div class="header-bar">
+      <div class="brand-box">
+        <div class="diya-logo">🪔</div>
+        <div>
+          <div class="brand-title">Diwali Tambola</div>
+          <div class="brand-sub">HOST</div>
+        </div>
+      </div>
+      <div class="live-badge" id="roundStatusBadge">live</div>
+    </div>
+
+    <!-- Share Player Link Card -->
+    <div class="card">
+      <div class="share-header">
+        <span>✨ SHARE PLAYER LINK (NO LOGIN NEEDED)</span>
+        <span class="code-badge">Demolink27.10</span>
+      </div>
+      <p class="share-desc">
+        Players link kholte hi bina login ke sirf Apna Naam daal kar sidha ticket ke sath join kar lenge (ya Guest bankar dekh sakenge)!
+      </p>
+      <div class="btn-row">
+        <button class="btn btn-dark" onclick="copyPlayerLink()">📋 Copy Join Link</button>
+        <button class="btn btn-whatsapp" onclick="shareOnWhatsApp()">💬 WhatsApp Share</button>
+      </div>
+      <a href="index.html" target="_blank" class="btn btn-outline-purple">
+        👁️ Test Player Link Experience ("Naam Daalo & Khelo" Screen) →
+      </a>
+    </div>
+
+    <!-- Sound & Round Info Row -->
+    <div class="pill-bar">
+      <button class="pill-btn" id="soundToggleBtn" onclick="toggleSound()">🔇 Sound off</button>
+      <div style="font-weight: 700; color: var(--text-muted);" id="roundCounterText">Round 1</div>
+      <button class="pill-btn" style="border-color: var(--gold); color: var(--gold);" onclick="openPastRoundsModal()">
+        📜 Past Rounds Data (<span id="pastRoundsCount">0</span>)
+      </button>
+    </div>
+
+    <!-- Last Called Number Card with Lingo -->
+    <div class="card">
+      <div class="last-called-flex">
+        <div class="big-number" id="lastCalledDisplay">--</div>
+        <div>
+          <div class="called-meta-label">LAST CALLED</div>
+          <div class="called-meta-status" id="calledCountStatus">Waiting for first number...</div>
+          <div class="lingo-pill" id="adminLingoText">Press Call Next Number to begin! 🪔</div>
+        </div>
+      </div>
+      <div class="recent-balls" id="recentBallsContainer"></div>
+    </div>
+
+    <!-- Host Controls & 1-90 Board -->
+    <div class="card">
+      <div class="card-title">
+        <span>Host controls</span>
+        <span id="autoTimerBadge" style="font-size: 0.82rem; color: #58f29c; display: none;">Auto-calling every 7s...</span>
+      </div>
+
+      <button class="btn btn-gold" id="callNextBtn" onclick="callNextNumber()">
+        Call next number
+      </button>
+
+      <div class="host-btn-group">
+        <button class="btn btn-dark" id="autoCallBtn" onclick="toggleAutoCall()">▶ Auto-call (7s)</button>
+        <button class="btn btn-dark" onclick="startNewRound()">🔄 New round</button>
+        <button class="btn btn-danger" onclick="finishCurrentRoundMidway()">🛑 Finish Round</button>
+      </div>
+
+      <div class="board-grid" id="numberBoardGrid"></div>
+    </div>
+
+    <!-- Prizes Status Card -->
+    <div class="card">
+      <div class="card-title">
+        <span>Prizes</span>
+        <span style="font-size: 0.8rem; color: var(--text-muted);">Live Claim Status</span>
+      </div>
+      <div id="adminPrizesList"></div>
+    </div>
+
+    <!-- Players & Fair Play -->
+    <div class="card">
+      <div class="card-title">
+        <span id="playersCountHeading">Players & fair play (0)</span>
+        <span style="font-size: 0.8rem; color: var(--gold-bright);">👑 Live Leaderboard</span>
+      </div>
+      <div id="adminPlayersList"></div>
+      <p class="helper-note">
+        Bogey = number cut before it was called or never called. False = wrong claim. Tickets are locked by the host on join, so edits are ignored and flagged.
+      </p>
+    </div>
+
+    <!-- Scrolling Activity Pane -->
+    <div class="card">
+      <div class="activity-label">ACTIVITY</div>
+      <div class="activity-list" id="adminActivityList"></div>
+    </div>
+
+    <div class="footer-diwali">🪔 Happy Diwali</div>
+  </div>
+
+  <!-- Automatic Game Over / Round Finished Popup Modal -->
+  <div id="roundCompleteModal" class="modal-overlay">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeRoundCompleteModal()" title="Close">✕</button>
+      <div style="text-align: center; margin-bottom: 16px;">
+        <div style="font-size: 3rem;">🎆🏆🪔</div>
+        <h2 style="color: var(--gold); margin-top: 6px;" id="modalCompleteTitle">Round Complete!</h2>
+        <p style="color: var(--text-muted); font-size: 0.92rem; margin-top: 4px;">
+          Is round ka saara data aur called numbers history mein safe store ho chuka hai.
+        </p>
+      </div>
+
+      <div id="modalWinnersPreview" style="display: none; margin-bottom: 16px;"></div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button class="btn btn-gold" onclick="startNewRoundFromModal()">🚀 Start New Round</button>
+        <button class="btn btn-dark" onclick="toggleWinnersListInModal()">🏆 See List of Winners & Called Numbers</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Past Rounds History Modal -->
+  <div id="pastRoundsModal" class="modal-overlay">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closePastRoundsModal()">✕</button>
+      <h2 style="color: var(--gold); margin-bottom: 6px;">📜 All Rounds Saved History</h2>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">
+        Har round ke winners aur called numbers yahan safe hain taki koi dispute na ho.
+      </p>
+      <div id="pastRoundsContainer"></div>
+    </div>
+  </div>
+
+  <script src="js/game.js"></script>
+  <script>
+    let soundOn = false;
+    let autoCallInterval = null;
+    let lastAdminReactionSeen = null;
+
+    function checkAdminAuth() {
+      if (sessionStorage.getItem('TAMBOLA_ADMIN_AUTH') === 'true') {
+        document.getElementById('adminLoginModal').classList.remove('show');
+        document.getElementById('adminMainContent').style.display = 'block';
+        renderAdminUI();
+      }
+    }
+
+    function handleAdminLogin() {
+      const id = document.getElementById('adminIdInput').value.trim();
+      const pass = document.getElementById('adminPassInput').value.trim();
+      if (id === ADMIN_CREDENTIALS.id && pass === ADMIN_CREDENTIALS.pass) {
+        sessionStorage.setItem('TAMBOLA_ADMIN_AUTH', 'true');
+        document.getElementById('adminLoginModal').classList.remove('show');
+        document.getElementById('adminMainContent').style.display = 'block';
+        renderAdminUI();
+      } else {
+        document.getElementById('loginError').style.display = 'block';
+      }
+    }
+
+    function toggleSound() {
+      soundOn = !soundOn;
+      document.getElementById('soundToggleBtn').textContent = soundOn ? '🔊 Sound on' : '🔇 Sound off';
+    }
+
+    function copyPlayerLink() {
+      const url = new URL('index.html', window.location.href).href;
+      navigator.clipboard.writeText(url);
+      alert('Player Link Copied: ' + url);
+    }
+
+    function shareOnWhatsApp() {
+      const url = new URL('index.html', window.location.href).href;
+      const text = encodeURIComponent(`🪔 Diwali Tambola Live Hai! Bina login ke sirf apna naam daal kar ticket ke sath join karo: ${url}`);
+      window.open(`https://wa.me/?text=${text}`, '_blank');
+    }
+
+    function callNextNumber() {
+      const state = getGameState();
+      if (state.status !== 'active') {
+        stopAutoCall();
+        alert('Ye round khatam ho chuka hai! Naya round shuru karein.');
+        return;
+      }
+
+      if (state.calledNumbers.length >= 90) {
+        stopAutoCall();
+        finishCurrentRoundMidway('All 90 numbers called');
+        return;
+      }
+
+      const calledSet = new Set(state.calledNumbers);
+      const remaining = [];
+      for (let i = 1; i <= 90; i++) {
+        if (!calledSet.has(i)) remaining.push(i);
+      }
+
+      const nextNum = remaining[Math.floor(Math.random() * remaining.length)];
+      state.calledNumbers.push(nextNum);
+      state.lastCalled = nextNum;
+      addActivity(state, `Host called ${nextNum} (${getNumberLingo(nextNum)})`);
+      archiveRoundIfNeeded(state, 'In Progress');
+      saveGameState(state);
+
+      speakText(`Number ${nextNum}. ${getNumberLingo(nextNum)}`, soundOn);
+      renderAdminUI();
+    }
+
+    function toggleAutoCall() {
+      if (autoCallInterval) {
+        stopAutoCall();
+      } else {
+        const state = getGameState();
+        if (state.status !== 'active') {
+          alert('Pehle New Round start karein!');
+          return;
+        }
+        callNextNumber();
+        autoCallInterval = setInterval(callNextNumber, 7000);
+        document.getElementById('autoCallBtn').textContent = '⏸ Stop Auto-call (7s)';
+        document.getElementById('autoCallBtn').style.borderColor = 'var(--gold)';
+        document.getElementById('autoTimerBadge').style.display = 'inline';
+      }
+    }
+
+    function stopAutoCall() {
+      if (autoCallInterval) {
+        clearInterval(autoCallInterval);
+        autoCallInterval = null;
+      }
+      const btn = document.getElementById('autoCallBtn');
+      if (btn) {
+        btn.textContent = '▶ Auto-call (7s)';
+        btn.style.borderColor = 'var(--border-purple)';
+      }
+      const badge = document.getElementById('autoTimerBadge');
+      if (badge) badge.style.display = 'none';
+    }
+
+    function finishCurrentRoundMidway(reason = 'Ended by Host') {
+      stopAutoCall();
+      const state = getGameState();
+      state.status = 'completed';
+      state.popupDismissedForRound = 0;
+      addActivity(state, `Round ${state.round} finished (${reason}).`);
+      archiveRoundIfNeeded(state, reason);
+      saveGameState(state);
+      renderAdminUI();
+    }
+
+    function startNewRound() {
+      stopAutoCall();
+      const state = getGameState();
+
+      if (state.calledNumbers.length > 0 || Object.values(state.prizes).some(p => p.status === 'claimed')) {
+        archiveRoundIfNeeded(state, 'Completed');
+      }
+
+      state.round += 1;
+      state.status = 'active';
+      state.popupDismissedForRound = 0;
+      state.calledNumbers = [];
+      state.lastCalled = null;
+      state.prizes = getDefaultPrizes();
+
+      Object.keys(state.players).forEach(pName => {
+        state.players[pName].ticket = generateTambolaTicket();
+        state.players[pName].marked = [];
+        state.players[pName].bogeys = 0;
+      });
+
+      addActivity(state, `Round ${state.round} started by Host.`);
+      saveGameState(state);
+      document.getElementById('roundCompleteModal').classList.remove('show');
+      renderAdminUI();
+    }
+
+    function startNewRoundFromModal() {
+      startNewRound();
+    }
+
+    function closeRoundCompleteModal() {
+      const state = getGameState();
+      state.popupDismissedForRound = state.round;
+      saveGameState(state);
+      document.getElementById('roundCompleteModal').classList.remove('show');
+    }
+
+    function toggleWinnersListInModal() {
+      const box = document.getElementById('modalWinnersPreview');
+      box.style.display = box.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function openPastRoundsModal() {
+      renderPastRoundsList();
+      document.getElementById('pastRoundsModal').classList.add('show');
+    }
+
+    function closePastRoundsModal() {
+      document.getElementById('pastRoundsModal').classList.remove('show');
+    }
+
+    function renderPastRoundsList() {
+      const state = getGameState();
+      const container = document.getElementById('pastRoundsContainer');
+      if (!state.pastRounds || state.pastRounds.length === 0) {
+        container.innerHTML = `<p style="color: var(--text-muted);">Abhi tak koi round archive nahi hua hai.</p>`;
+        return;
+      }
+
+      container.innerHTML = state.pastRounds.map(r => {
+        const prizeLines = Object.values(r.prizes).map(p =>
+          `<div style="font-size: 0.85rem; margin-bottom: 3px;">
+            ${p.icon} <b>${p.name}:</b> ${p.winner ? `<span style="color:#58f29c;">Won by ${p.winner}</span>` : `<span style="color:var(--text-muted);">Unclaimed</span>`}
+          </div>`
+        ).join('');
+
+        const numsHtml = r.calledNumbers.length > 0
+          ? r.calledNumbers.map(n => `<span class="history-num-pill">${n}</span>`).join('')
+          : `<span style="color:var(--text-muted); font-size:0.8rem;">No numbers called</span>`;
+
+        return `
+          <div class="history-card">
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+              <strong style="color:var(--gold);">Round ${r.round} (${r.reason})</strong>
+              <span style="color:var(--text-muted); font-size:0.8rem;">${r.endedAt}</span>
+            </div>
+            <div style="margin-bottom:8px;">${prizeLines}</div>
+            <div style="font-size:0.8rem; color:var(--text-muted);">
+              Called Numbers (${r.calledNumbers.length}/90 in exact order):
+            </div>
+            <div class="history-nums">${numsHtml}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderAdminUI() {
+      const state = getGameState();
+
+      if (state.status === 'active' && areAllPrizesClaimed(state)) {
+        stopAutoCall();
+        state.status = 'completed';
+        addActivity(state, `🎉 All prizes claimed in Round ${state.round}! Round complete!`);
+        archiveRoundIfNeeded(state, 'All Prizes Claimed');
+        saveGameState(state);
+      }
+
+      if (state.lastReaction && state.lastReaction.id !== lastAdminReactionSeen) {
+        lastAdminReactionSeen = state.lastReaction.id;
+        spawnFloatingEmoji(state.lastReaction.emoji, state.lastReaction.sender);
+      }
+
+      document.getElementById('roundCounterText').textContent = `Round ${state.round}`;
+      document.getElementById('pastRoundsCount').textContent = state.pastRounds.length;
+      document.getElementById('roundStatusBadge').textContent = state.status === 'active' ? 'live' : 'ended';
+      document.getElementById('lastCalledDisplay').textContent = state.lastCalled !== null ? state.lastCalled : '--';
+      document.getElementById('adminLingoText').textContent = getNumberLingo(state.lastCalled);
+      document.getElementById('calledCountStatus').textContent =
+        state.calledNumbers.length > 0
+          ? `Sharp ears please! ${state.calledNumbers.length} called.`
+          : 'Press "Call next number" to start!';
+
+      const recent = [...state.calledNumbers].reverse().slice(0, 8);
+      document.getElementById('recentBallsContainer').innerHTML = recent.map((num, idx) =>
+        `<div class="ball-chip ${idx === 0 ? 'latest' : ''}">${num}</div>`
+      ).join('');
+
+      const calledSet = new Set(state.calledNumbers);
+      let boardHtml = '';
+      for (let i = 1; i <= 90; i++) {
+        let cls = 'board-cell';
+        if (state.lastCalled === i) cls += ' current';
+        else if (calledSet.has(i)) cls += ' called';
+        boardHtml += `<div class="${cls}">${i}</div>`;
+      }
+      document.getElementById('numberBoardGrid').innerHTML = boardHtml;
+
+      document.getElementById('adminPrizesList').innerHTML = Object.values(state.prizes).map(p => `
+        <div class="prize-item">
+          <div class="prize-left">
+            <span style="font-size: 1.35rem;">${p.icon}</span>
+            <span>${p.name}</span>
+          </div>
+          ${p.status === 'claimed'
+            ? `<span class="prize-status-claimed">🏆 ${p.winner}</span>`
+            : `<span class="prize-status-open">Still to be claimed (open)</span>`
+          }
+        </div>
+      `).join('');
+
+      const playersArr = Object.values(state.players);
+      document.getElementById('playersCountHeading').textContent = `Players & fair play (${playersArr.length})`;
+
+      let maxMarked = 0;
+      playersArr.forEach(p => {
+        const validCount = p.marked.filter(n => calledSet.has(n)).length;
+        if (validCount > maxMarked) maxMarked = validCount;
+      });
+
+      if (playersArr.length === 0) {
+        document.getElementById('adminPlayersList').innerHTML = `
+          <p style="color: var(--text-muted); padding: 8px 0;">
+            Waiting for players to join via Player Link...
+          </p>
+        `;
+      } else {
+        const sortedPlayers = [...playersArr].sort((a, b) => {
+          const aValid = a.marked.filter(n => calledSet.has(n)).length;
+          const bValid = b.marked.filter(n => calledSet.has(n)).length;
+          return bValid - aValid;
+        });
+
+        document.getElementById('adminPlayersList').innerHTML = sortedPlayers.map(p => {
+          const validCount = p.marked.filter(n => calledSet.has(n)).length;
+          const isLeading = maxMarked > 0 && validCount === maxMarked;
+          return `
+            <div class="player-row ${isLeading ? 'leader' : ''}">
+              <div class="player-info">
+                <span class="green-dot"></span>
+                <strong>${p.name}</strong>
+                ${isLeading ? `<span class="leader-badge">🔥 Winning (${validCount}/15)</span>` : ''}
+                ${validCount === 14 ? `<span class="bogey-tag" style="background:#ff7300; color:#fff;">🚨 1 Away!</span>` : ''}
+                ${p.bogeys > 0 ? `<span class="bogey-tag">⚠️ ${p.bogeys} Bogey</span>` : ''}
+              </div>
+              <div class="player-progress">${validCount}/15 marked</div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      document.getElementById('adminActivityList').innerHTML = state.activity.map(item => `
+        <div class="activity-item">
+          <span>${item.text}</span>
+          <span class="activity-time">${item.time}</span>
+        </div>
+      `).join('');
+
+      if (state.status === 'completed' && state.popupDismissedForRound !== state.round) {
+        document.getElementById('modalCompleteTitle').textContent = `Round ${state.round} Finished!`;
+        const winnersHtml = Object.values(state.prizes).map(p => `
+          <div style="padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between;">
+            <span>${p.icon} ${p.name}</span>
+            <strong style="color: var(--gold-bright);">${p.winner || 'Unclaimed'}</strong>
+          </div>
+        `).join('');
+        document.getElementById('modalWinnersPreview').innerHTML = `
+          <div class="history-card">
+            <div style="color:var(--gold); font-weight:700; margin-bottom:6px;">🏆 Round ${state.round} Winners List:</div>
+            ${winnersHtml}
+            <div style="margin-top:8px; font-size:0.8rem; color:var(--text-muted);">
+              Total Numbers Called: ${state.calledNumbers.length} (${state.calledNumbers.join(', ') || 'None'})
+            </div>
+          </div>
+        `;
+        document.getElementById('roundCompleteModal').classList.add('show');
+      }
+    }
+
+    window.addEventListener('storage', () => renderAdminUI());
+    if (syncChannel) {
+      syncChannel.onmessage = (e) => {
+        if (e.data && e.data.type === 'LIVE_REACTION') {
+          lastAdminReactionSeen = e.data.data.id;
+          spawnFloatingEmoji(e.data.data.emoji, e.data.data.sender);
+        }
+        renderAdminUI();
+      };
+    }
+    setInterval(renderAdminUI, 1200);
+
+    checkAdminAuth();
+  </script>
+</body>
+</html>
